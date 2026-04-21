@@ -17,7 +17,7 @@ class InventarioController extends Controller {
     }
 
     public function index(): void {
-        $this->requireAuth();
+        $this->requireRole('admin', 'jefatura');
         $this->view('inventario.index', [
             'medicamentos' => $this->medModel->getAllWithStatus(),
             'movimientos'  => $this->movModel->getRecientes(30),
@@ -27,7 +27,7 @@ class InventarioController extends Controller {
     }
 
     public function entrada(): void {
-        $this->requireAuth();
+        $this->requireRole('admin', 'jefatura');
         $medId    = (int)($_POST['medicamento_id'] ?? 0);
         $cantidad = (int)($_POST['cantidad'] ?? 0);
         $motivo   = trim($_POST['motivo'] ?? 'Entrada de stock');
@@ -54,7 +54,7 @@ class InventarioController extends Controller {
     }
 
     public function salida(): void {
-        $this->requireAuth();
+        $this->requireRole('admin', 'jefatura');
         $medId    = (int)($_POST['medicamento_id'] ?? 0);
         $cantidad = (int)($_POST['cantidad'] ?? 0);
         $motivo   = trim($_POST['motivo'] ?? 'Salida de stock');
@@ -88,7 +88,7 @@ class InventarioController extends Controller {
     }
 
     public function movimientos(): void {
-        $this->requireAuth();
+        $this->requireRole('admin', 'jefatura');
         $this->view('inventario.movimientos', [
             'movimientos' => $this->movModel->getRecientes(100),
             'notifCount'  => $this->notifModel->countNoLeidas(),

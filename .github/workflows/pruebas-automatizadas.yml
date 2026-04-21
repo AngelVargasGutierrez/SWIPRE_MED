@@ -12,17 +12,11 @@ on:
         required: false
         default: 'all'
         type: choice
-        options:
-          - all
-          - CP-001
-          - CP-002
+        options: [all, CP-001, CP-002]
 
 jobs:
-  # ============================================================
-  # JOB 1: Preparar base de datos y servidor PHP
-  # ============================================================
-  setup-and-test:
-    name: Setup + E2E Tests
+  e2e:
+    name: E2E Tests (Playwright)
     runs-on: ubuntu-latest
 
     services:
@@ -35,49 +29,49 @@ jobs:
         ports:
           - 3307:3306
         options: >-
-          --health-cmd="mariadb-admin ping -h localhost --silent"
+          --health-cmd="mariadb-admin ping -h 127.0.0.1 --silent"
           --health-interval=10s
           --health-timeout=5s
-          --health-retries=5
+          --health-retries=6
 
     steps:
-      - name: Checkout código
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configurar PHP 8.2
+      - name: Setup PHP 8.2
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
           extensions: pdo, pdo_mysql, mbstring
-          coverage: none
 
-      - name: Cargar schema y datos de prueba
+      - name: Cargar schema y seed
         run: |
           mysql -u root -h 127.0.0.1 -P 3307 swipre_med < database/schema.sql
           mysql -u root -h 127.0.0.1 -P 3307 swipre_med < database/seed_data.sql
           php database/seed_passwords.php | mysql -u root -h 127.0.0.1 -P 3307 swipre_med
-        env:
-          MYSQL_PWD: ''
 
       - name: Ajustar config para CI
+        # En CI se sirve desde la raíz, BASE_URL debe ser vacío
         run: |
-          sed -i "s/define('DB_HOST', '127.0.0.1')/define('DB_HOST', '127.0.0.1')/" config/config.php
-          sed -i "s/define('DB_PORT', 3307)/define('DB_PORT', 3307)/" config/config.php
+          sed -i "s|define('BASE_URL', '/swipre-med/public')|define('BASE_URL', '')|" public/index.php
+          sed -i "s|define('DB_HOST', 'localhost')|define('DB_HOST', '127.0.0.1')|" config/config.php
+          sed -i "s|define('DB_PORT', 3306)|define('DB_PORT', 3307)|" config/config.php
 
-      - name: Iniciar servidor PHP integrado
+      - name: Iniciar servidor PHP
         run: |
-          php -S 0.0.0.0:8080 -t public/ &
+          php -S 0.0.0.0:8080 tests/ci-router.php &
           sleep 2
-          curl -s http://localhost:8080/ | head -5
-        env:
-          BASE_URL: http://localhost:8080
+          curl -sf http://localhost:8080/login | grep -q 'SWIPRE-MED' && echo "Servidor OK"
 
-      - name: Instalar Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: tests/package-lock.json
 
-      - name: Instalar dependencias Playwright
+      - name: Instalar Playwright
+        working-directory: tests
         run: |
           npm init -y
           npm install --save-dev @playwright/test
@@ -85,67 +79,49 @@ jobs:
 
       - name: Ejecutar CP-001 — Consultar Medicamento
         if: ${{ github.event.inputs.test_suite == 'all' || github.event.inputs.test_suite == 'CP-001' || github.event.inputs.test_suite == '' }}
-        run: |
-          npx playwright test tests/e2e/consultar-medicamento.spec.js \
-            --reporter=html \
-            --output=test-results/CP-001
+        working-directory: tests
         env:
-          BASE_URL: http://localhost:8080/swipre-med/public
+          BASE_URL: http://localhost:8080
+        run: npx playwright test e2e/consultar-medicamento.spec.js --config=playwright.config.js
 
       - name: Ejecutar CP-002 — Reporte Top 5
         if: ${{ github.event.inputs.test_suite == 'all' || github.event.inputs.test_suite == 'CP-002' || github.event.inputs.test_suite == '' }}
-        run: |
-          npx playwright test tests/e2e/reporte-top5.spec.js \
-            --reporter=html \
-            --output=test-results/CP-002
+        working-directory: tests
         env:
-          BASE_URL: http://localhost:8080/swipre-med/public
+          BASE_URL: http://localhost:8080
+        run: npx playwright test e2e/reporte-top5.spec.js --config=playwright.config.js
 
-      - name: Subir reporte de resultados
+      - name: Subir reporte HTML
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: reporte-pruebas-${{ github.run_number }}
-          path: |
-            playwright-report/
-            test-results/
+          name: playwright-report-${{ github.run_number }}
+          path: playwright-report/
           retention-days: 30
 
-  # ============================================================
-  # JOB 2: Resumen de resultados en PR
-  # ============================================================
-  report-summary:
-    name: Resumen en PR
+  comment-pr:
+    name: Comentar resultado en PR
     runs-on: ubuntu-latest
-    needs: setup-and-test
+    needs: e2e
     if: always() && github.event_name == 'pull_request'
 
     steps:
-      - name: Descargar reporte
-        uses: actions/download-artifact@v4
-        with:
-          name: reporte-pruebas-${{ github.run_number }}
-          path: ./reporte
-
-      - name: Comentar resultado en PR
-        uses: actions/github-script@v7
+      - uses: actions/github-script@v7
         with:
           script: |
-            const fs = require('fs');
-            const status = '${{ needs.setup-and-test.result }}';
-            const emoji  = status === 'success' ? '✅' : '❌';
-            const body = `## ${emoji} Pruebas Automatizadas — SWIPRE-MED
+            const ok     = '${{ needs.e2e.result }}' === 'success';
+            const emoji  = ok ? '✅' : '❌';
+            const estado = ok ? 'Aprobado' : 'Fallido';
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner:        context.repo.owner,
+              repo:         context.repo.repo,
+              body: `## ${emoji} Pruebas Automatizadas — SWIPRE-MED (Run #${{ github.run_number }})
 
             | Suite | Casos | Estado |
             |---|---|---|
-            | CP-001 Consultar Medicamento | 8 casos | ${status === 'success' ? '✅ Aprobado' : '❌ Fallido'} |
-            | CP-002 Reporte Top 5 | 10 casos | ${status === 'success' ? '✅ Aprobado' : '❌ Fallido'} |
+            | CP-001 — Consultar Medicamento | 8 | ${emoji} ${estado} |
+            | CP-002 — Reporte Top 5 Buscados | 10 | ${emoji} ${estado} |
 
-            > Reporte completo disponible en los **Artifacts** de este workflow (Run #${{ github.run_number }}).`;
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body
+            > Reporte HTML completo disponible en los **Artifacts** de este run.`,
             });

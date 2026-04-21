@@ -16,7 +16,7 @@ class ReporteController extends Controller {
     }
 
     public function index(): void {
-        $this->requireAuth();
+        $this->requireRole('admin', 'jefatura');
         $this->view('reportes.index', [
             'medicamentos'      => $this->medModel->getAllWithStatus(),
             'criticos'          => $this->medModel->getCriticos(),
@@ -29,7 +29,7 @@ class ReporteController extends Controller {
     }
 
     public function exportar(): void {
-        $this->requireAuth();
+        $this->requireRole('admin', 'jefatura');
         $tipo = $_GET['tipo'] ?? 'medicamentos';
         header('Content-Type: text/csv; charset=utf-8');
         header('Content-Disposition: attachment; filename="reporte_' . $tipo . '_' . date('Y-m-d') . '.csv"');

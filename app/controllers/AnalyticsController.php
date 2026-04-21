@@ -16,7 +16,7 @@ class AnalyticsController extends Controller {
     }
 
     public function index(): void {
-        $this->requireAuth();
+        $this->requireRole('admin', 'jefatura');
         $this->view('analytics.index', [
             'stockPorCategoria'  => $this->medModel->getStockPorCategoria(),
             'estadoStock'        => $this->medModel->getEstadoStock(),
@@ -28,7 +28,7 @@ class AnalyticsController extends Controller {
     }
 
     public function getData(): void {
-        $this->requireAuth();
+        $this->requireRole('admin', 'jefatura');
         $this->json([
             'stockPorCategoria' => $this->medModel->getStockPorCategoria(),
             'estadoStock'       => $this->medModel->getEstadoStock(),
