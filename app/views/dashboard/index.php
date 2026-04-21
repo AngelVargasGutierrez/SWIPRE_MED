@@ -4,7 +4,7 @@
   <div class="page-header-row">
     <div>
       <h1>Dashboard</h1>
-      <p>Visión general del inventario farmacéutico</p>
+      <p><?= $rolActual === 'farmacia' ? 'Panel de Farmacia' : 'Visión general del inventario farmacéutico' ?></p>
     </div>
     <span style="font-size:12px;color:var(--text-muted)"><?= date('d/m/Y H:i') ?></span>
   </div>
@@ -19,7 +19,43 @@
   </div>
   <?php endif; ?>
 
-  <!-- STAT CARDS -->
+  <?php if ($rolActual === 'farmacia'): ?>
+  <!-- ==================== VISTA FARMACIA ==================== -->
+
+  <div class="stats-grid" style="grid-template-columns:repeat(2,1fr)">
+    <div class="stat-card blue">
+      <div class="stat-info">
+        <div class="label">Total Medicamentos</div>
+        <div class="value"><?= $totalMedicamentos ?></div>
+        <div class="sub">Activos en inventario</div>
+      </div>
+      <div class="stat-icon"><i class="fa-solid fa-pills"></i></div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-info">
+        <div class="label">Stock Crítico</div>
+        <div class="value"><?= $stockCritico ?></div>
+        <div class="sub">Requieren atención</div>
+      </div>
+      <div class="stat-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:24px">
+    <div class="card-header">
+      <h3>Top 5 Medicamentos más Buscados</h3>
+      <span style="font-size:12px;color:var(--text-muted)">Basado en búsquedas en Medicamentos</span>
+    </div>
+    <div class="card-body">
+      <div class="chart-container" style="height:260px">
+        <canvas id="chartTop5Farmacia"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <?php else: ?>
+  <!-- ==================== VISTA ADMIN / JEFATURA ==================== -->
+
   <div class="stats-grid">
     <div class="stat-card blue">
       <div class="stat-info">
@@ -55,7 +91,6 @@
     </div>
   </div>
 
-  <!-- CHARTS ROW 1 -->
   <div class="dashboard-grid">
     <div class="card">
       <div class="card-header"><h3>Stock por Categoría</h3></div>
@@ -80,7 +115,6 @@
     </div>
   </div>
 
-  <!-- CHARTS ROW 2 -->
   <div class="dashboard-grid">
     <div class="card">
       <div class="card-header"><h3>Movimientos de la Semana</h3></div>
@@ -100,7 +134,6 @@
     </div>
   </div>
 
-  <!-- ALERTAS + QUICK STATS -->
   <div class="dashboard-grid thirds">
     <div class="card">
       <div class="card-header">
@@ -153,53 +186,64 @@
     </div>
   </div>
 
+  <?php endif; ?>
 </div>
 
 <?php
-$catLabels = json_encode(array_column($stockPorCategoria, 'categoria'));
-$catValues = json_encode(array_map('intval', array_column($stockPorCategoria, 'total_stock')));
-$estadoData = json_encode([(int)$estadoStock['normal'], (int)$estadoStock['bajo'], (int)$estadoStock['critico']]);
-
-$semDias    = json_encode(array_map(fn($m) => date('D', strtotime($m['dia'])), $movimientosSemana));
+$catLabels   = json_encode(array_column($stockPorCategoria, 'categoria'));
+$catValues   = json_encode(array_map('intval', array_column($stockPorCategoria, 'total_stock')));
+$estadoData  = json_encode([(int)$estadoStock['normal'], (int)$estadoStock['bajo'], (int)$estadoStock['critico']]);
+$semDias     = json_encode(array_map(fn($m) => date('D', strtotime($m['dia'])), $movimientosSemana));
 $semEntradas = json_encode(array_map('intval', array_column($movimientosSemana, 'entradas')));
 $semSalidas  = json_encode(array_map('intval', array_column($movimientosSemana, 'salidas')));
-
-$top5Names  = json_encode(array_column($top5PorValor, 'nombre'));
-$top5Values = json_encode(array_map('floatval', array_column($top5PorValor, 'valor_total')));
+$top5Names   = json_encode(array_column($top5PorValor, 'nombre'));
+$top5Values  = json_encode(array_map('floatval', array_column($top5PorValor, 'valor_total')));
+$busqNames   = json_encode(array_column($top5MasBuscados, 'nombre'));
+$busqValues  = json_encode(array_map('intval', array_column($top5MasBuscados, 'busquedas')));
 ?>
 <script>
-// Stock por Categoría
+<?php if ($rolActual === 'farmacia'): ?>
+new Chart(document.getElementById('chartTop5Farmacia'), {
+  type: 'bar',
+  data: {
+    labels: <?= $busqNames ?>,
+    datasets: [{
+      label: 'Búsquedas',
+      data: <?= $busqValues ?>,
+      backgroundColor: ['#1a4fa0','#3b82f6','#60a5fa','#93c5fd','#bfdbfe'],
+      borderRadius: 6, borderWidth: 0
+    }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { x: { beginAtZero: true, grid: { color: '#f1f5f9' } }, y: { grid: { display: false } } }
+  }
+});
+<?php else: ?>
 new Chart(document.getElementById('chartCategoria'), {
   type: 'bar',
   data: {
     labels: <?= $catLabels ?>,
-    datasets: [{
-      label: 'Stock',
-      data: <?= $catValues ?>,
-      backgroundColor: 'rgba(26,79,160,.75)',
-      borderColor: '#1a4fa0',
-      borderWidth: 1, borderRadius: 4,
-    }]
+    datasets: [{ label: 'Stock', data: <?= $catValues ?>,
+      backgroundColor: 'rgba(26,79,160,.75)', borderColor: '#1a4fa0',
+      borderWidth: 1, borderRadius: 4 }]
   },
   options: { responsive: true, maintainAspectRatio: false,
     plugins: { legend: { display: false } },
     scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } }
   }
 });
-
-// Estado stock donut
 new Chart(document.getElementById('chartEstado'), {
   type: 'doughnut',
   data: {
-    labels: ['Normal', 'Bajo', 'Crítico'],
+    labels: ['Normal','Bajo','Crítico'],
     datasets: [{ data: <?= $estadoData ?>, backgroundColor: ['#10b981','#f59e0b','#ef4444'], borderWidth: 0 }]
   },
   options: { responsive: true, maintainAspectRatio: false, cutout: '68%',
     plugins: { legend: { display: false } }
   }
 });
-
-// Movimientos semana
 new Chart(document.getElementById('chartMovimientos'), {
   type: 'line',
   data: {
@@ -214,22 +258,17 @@ new Chart(document.getElementById('chartMovimientos'), {
     scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } }
   }
 });
-
-// Top 5 horizontal bar
 new Chart(document.getElementById('chartTop5'), {
   type: 'bar',
   data: {
     labels: <?= $top5Names ?>,
-    datasets: [{
-      label: 'Valor ($)',
-      data: <?= $top5Values ?>,
-      backgroundColor: 'rgba(59,130,246,.8)',
-      borderRadius: 4,
-    }]
+    datasets: [{ label: 'Valor ($)', data: <?= $top5Values ?>,
+      backgroundColor: 'rgba(59,130,246,.8)', borderRadius: 4 }]
   },
   options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
     plugins: { legend: { display: false } },
     scales: { x: { grid: { color: '#f1f5f9' } }, y: { grid: { display: false } } }
   }
 });
+<?php endif; ?>
 </script>

@@ -41,10 +41,12 @@
       <ul>
         <?php navItem('fa-solid fa-gauge', 'Dashboard', '/dashboard', $currentUri); ?>
         <?php navItem('fa-solid fa-pills', 'Medicamentos', '/medicamentos', $currentUri); ?>
+        <?php if (($user['rol'] ?? '') !== 'farmacia'): ?>
         <?php navItem('fa-solid fa-boxes-stacked', 'Control Inventario', '/inventario', $currentUri); ?>
         <?php navItem('fa-solid fa-bell', 'Notificaciones', '/notificaciones', $currentUri, ($notifCount ?? 0) > 0 ? ($notifCount ?? 0) : null); ?>
         <?php navItem('fa-solid fa-file-lines', 'Reportes', '/reportes', $currentUri); ?>
         <?php navItem('fa-solid fa-chart-line', 'Analytics', '/analytics', $currentUri); ?>
+        <?php endif; ?>
         <?php if (($user['rol'] ?? '') === 'admin'): ?>
         <?php navItem('fa-solid fa-users', 'Usuarios', '/usuarios', $currentUri); ?>
         <?php endif; ?>
@@ -60,11 +62,11 @@
 
   <!-- MAIN -->
   <main class="main-content">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <?= $content ?>
   </main>
 
 </div>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="<?= BASE_URL ?>/js/app.js"></script>
 </body>
 </html>

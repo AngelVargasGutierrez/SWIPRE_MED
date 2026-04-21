@@ -64,7 +64,7 @@
       </div>
     </div>
     <div class="card">
-      <div class="card-header"><h3>Top 5 Medicamentos por Valor</h3></div>
+      <div class="card-header"><h3>Top 5 Medicamentos más Consultados</h3></div>
       <div class="card-body">
         <div class="chart-container" style="height:240px"><canvas id="cTop5"></canvas></div>
       </div>
@@ -79,8 +79,8 @@ $estD  = json_encode([(int)$estadoStock['normal'], (int)$estadoStock['bajo'], (i
 $semD  = json_encode(array_map(fn($m) => date('D', strtotime($m['dia'])), $movimientosSemana));
 $semE  = json_encode(array_map('intval', array_column($movimientosSemana, 'entradas')));
 $semS  = json_encode(array_map('intval', array_column($movimientosSemana, 'salidas')));
-$t5N   = json_encode(array_column($top5PorValor, 'nombre'));
-$t5V   = json_encode(array_map('floatval', array_column($top5PorValor, 'valor_total')));
+$t5N   = json_encode(array_column($top5Consultados, 'nombre'));
+$t5V   = json_encode(array_map('intval', array_column($top5Consultados, 'busquedas')));
 ?>
 <script>
 new Chart(document.getElementById('cCategoria'), {
@@ -111,7 +111,7 @@ new Chart(document.getElementById('cMovimientos'), {
 });
 new Chart(document.getElementById('cTop5'), {
   type: 'bar',
-  data: { labels: <?= $t5N ?>, datasets: [{ label: 'Valor ($)', data: <?= $t5V ?>,
+  data: { labels: <?= $t5N ?>, datasets: [{ label: 'Consultas', data: <?= $t5V ?>,
     backgroundColor: 'rgba(37,99,235,.8)', borderRadius: 5 }]},
   options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
     plugins: { legend: { display: false } }, scales: { x: {}, y: { grid: { display: false } } }

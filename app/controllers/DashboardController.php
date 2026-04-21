@@ -22,6 +22,8 @@ class DashboardController extends Controller {
         $porVencer  = $this->medModel->getPorVencer(90);
         $this->notifModel->generarAlertas($criticos, $porVencer);
 
+        $rol  = $_SESSION['user']['rol'] ?? '';
+
         $data = [
             'totalMedicamentos'  => $this->medModel->count(),
             'stockCritico'       => count($criticos),
@@ -31,12 +33,14 @@ class DashboardController extends Controller {
             'estadoStock'        => $this->medModel->getEstadoStock(),
             'movimientosSemana'  => $this->movModel->getMovimientosSemana(),
             'top5PorValor'       => $this->medModel->getTop5PorValor(),
+            'top5MasBuscados'    => $this->medModel->getTop5MasBuscados(),
             'alertas'            => $this->notifModel->findWhere(['leida' => 0]),
             'movimientosHoy'     => $this->movModel->getTotalHoy(),
             'entradasSemana'     => $this->movModel->getEntradasSemana(),
             'salidasSemana'      => $this->movModel->getSalidasSemana(),
             'notifCount'         => $this->notifModel->countNoLeidas(),
             'flash'              => $this->getFlash(),
+            'rolActual'          => $rol,
         ];
 
         $this->view('dashboard.index', $data);

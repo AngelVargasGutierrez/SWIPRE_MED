@@ -18,12 +18,12 @@ class AnalyticsController extends Controller {
     public function index(): void {
         $this->requireAuth();
         $this->view('analytics.index', [
-            'stockPorCategoria' => $this->medModel->getStockPorCategoria(),
-            'estadoStock'       => $this->medModel->getEstadoStock(),
-            'movimientosSemana' => $this->movModel->getMovimientosSemana(),
-            'top5PorValor'      => $this->medModel->getTop5PorValor(),
-            'valorTotal'        => $this->medModel->getValorTotal(),
-            'notifCount'        => $this->notifModel->countNoLeidas(),
+            'stockPorCategoria'  => $this->medModel->getStockPorCategoria(),
+            'estadoStock'        => $this->medModel->getEstadoStock(),
+            'movimientosSemana'  => $this->movModel->getMovimientosSemana(),
+            'top5Consultados'    => $this->medModel->getTop5MasBuscados(),
+            'valorTotal'         => $this->medModel->getValorTotal(),
+            'notifCount'         => $this->notifModel->countNoLeidas(),
         ]);
     }
 
@@ -33,7 +33,7 @@ class AnalyticsController extends Controller {
             'stockPorCategoria' => $this->medModel->getStockPorCategoria(),
             'estadoStock'       => $this->medModel->getEstadoStock(),
             'movimientosSemana' => $this->movModel->getMovimientosSemana(),
-            'top5PorValor'      => $this->medModel->getTop5PorValor(),
+            'top5Consultados'   => $this->medModel->getTop5MasBuscados(),
         ]);
     }
 }

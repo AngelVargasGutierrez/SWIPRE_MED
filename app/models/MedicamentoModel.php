@@ -75,6 +75,34 @@ class MedicamentoModel extends Model {
         return $this->query($sql);
     }
 
+    public function getTop5MasConsultados(): array {
+        $sql = "SELECT nombre, consultas
+                FROM {$this->table}
+                ORDER BY consultas DESC
+                LIMIT 5";
+        return $this->query($sql);
+    }
+
+    public function incrementarConsultas(int $id): void {
+        $sql = "UPDATE {$this->table} SET consultas = consultas + 1 WHERE id = ?";
+        $this->query($sql, [$id]);
+    }
+
+    public function getTop5MasBuscados(): array {
+        $sql = "SELECT nombre, busquedas
+                FROM {$this->table}
+                ORDER BY busquedas DESC
+                LIMIT 5";
+        return $this->query($sql);
+    }
+
+    public function incrementarBusquedas(array $ids): void {
+        if (empty($ids)) return;
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $sql = "UPDATE {$this->table} SET busquedas = busquedas + 1 WHERE id IN ($placeholders)";
+        $this->query($sql, $ids);
+    }
+
     public function getEstadoStock(): array {
         $sql = "SELECT
                     SUM(CASE WHEN stock_actual > stock_minimo THEN 1 ELSE 0 END) as normal,

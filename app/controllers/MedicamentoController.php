@@ -64,6 +64,8 @@ class MedicamentoController extends Controller {
             $this->redirect('/medicamentos');
         }
 
+        $this->model->incrementarConsultas((int)$id);
+
         require_once BASE_PATH . '/app/models/MovimientoModel.php';
         $movModel = new MovimientoModel();
 
@@ -114,9 +116,16 @@ class MedicamentoController extends Controller {
 
         if (empty($term)) {
             $this->json([]);
+            return;
         }
 
         $resultados = $this->model->search($term, $laboratorio ?: null);
+
+        if (strlen($term) >= 3 && !empty($resultados)) {
+            $ids = array_column($resultados, 'id');
+            $this->model->incrementarBusquedas($ids);
+        }
+
         $this->json($resultados);
     }
 }
