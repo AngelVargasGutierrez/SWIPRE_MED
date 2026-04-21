@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+  bootstrap="PU/bootstrap.php"
+  colors="true"
+  stopOnFailure="false"
+>
+  <testsuites>
+    <testsuite name="PU-001 Consultar Medicamento">
+      <file>PU/Unit/MedicamentoModelTest.php</file>
+    </testsuite>
+    <testsuite name="PU-002 Reporte Top 5">
+      <file>PU/Unit/ReporteTop5Test.php</file>
+    </testsuite>
+  </testsuites>
+</phpunit>

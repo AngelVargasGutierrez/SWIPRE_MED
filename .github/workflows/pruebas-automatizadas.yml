@@ -15,6 +15,75 @@ on:
         options: [all, CP-001, CP-002]
 
 jobs:
+  # ============================================================
+  # JOB 1: Pruebas Unitarias PHPUnit (PU-001 y PU-002)
+  # ============================================================
+  unit-tests:
+    name: Pruebas Unitarias (PHPUnit)
+    runs-on: ubuntu-latest
+
+    services:
+      mariadb:
+        image: mariadb:10.4
+        env:
+          MARIADB_ROOT_PASSWORD: ''
+          MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: 'yes'
+          MARIADB_DATABASE: swipre_med
+        ports:
+          - 3307:3306
+        options: >-
+          --health-cmd="mariadb-admin ping -h 127.0.0.1 --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=6
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo, pdo_mysql, mbstring
+          tools: phpunit
+
+      - name: Cargar schema y seed
+        run: |
+          mysql -u root -h 127.0.0.1 -P 3307 swipre_med < database/schema.sql
+          mysql -u root -h 127.0.0.1 -P 3307 swipre_med < database/seed_data.sql
+          php database/seed_passwords.php | mysql -u root -h 127.0.0.1 -P 3307 swipre_med
+
+      - name: Ajustar config para CI
+        run: |
+          sed -i "s|define('BASE_URL', '/swipre-med/public')|define('BASE_URL', '')|" public/index.php
+
+      - name: Instalar dependencias Composer
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Ejecutar PU-001 — Consultar Medicamento
+        run: php vendor/bin/phpunit --testsuite "PU-001 Consultar Medicamento" --testdox
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: '3307'
+
+      - name: Ejecutar PU-002 — Reporte Top 5
+        run: php vendor/bin/phpunit --testsuite "PU-002 Reporte Top 5" --testdox
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: '3307'
+
+      - name: Subir reporte PHPUnit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phpunit-report-${{ github.run_number }}
+          path: .phpunit.result.cache
+          retention-days: 30
+
+  # ============================================================
+  # JOB 2: Pruebas E2E Playwright
+  # ============================================================
   e2e:
     name: E2E Tests (Playwright)
     runs-on: ubuntu-latest
