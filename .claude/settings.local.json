@@ -17,7 +17,8 @@
       "Read(//c/xampp/mysql/**)",
       "Bash(/c/xampp/php/php.exe /c/xampp/htdocs/swipre-med/database/seed_passwords.php)",
       "Bash(/c/xampp/mysql/bin/mysql.exe -u root --password= -h 127.0.0.1 --port=3307 swipre_med -e ' *)",
-      "Bash(/c/xampp/mysql/bin/mysql.exe -u root --password=\"\" -h 127.0.0.1 --port=3307 swipre_med)"
+      "Bash(/c/xampp/mysql/bin/mysql.exe -u root --password=\"\" -h 127.0.0.1 --port=3307 swipre_med)",
+      "Bash(python3 -c \"import yaml; yaml.safe_load\\(open\\('/c/xampp/htdocs/swipre-med/.github/workflows/pruebas-automatizadas.yml'\\)\\)\")"
     ]
   }
 }
