@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/c/xampp/mysql/bin/mysql.exe -u root --password=\"\")",
+      "Bash(/c/xampp/mysql/bin/mysql.exe --version)",
+      "Bash(/c/xampp/mysql/bin/mysql.exe -u root -h 127.0.0.1 --port=3306 -e \"SELECT VERSION\\(\\);\")",
+      "Bash(\"/c/Program Files/MySQL/MySQL Server 9.6/bin/mysql.exe\" -u root -p\"\" -e \"SELECT VERSION\\(\\); SHOW DATABASES;\")",
+      "Bash(\"/c/Program Files/MySQL/MySQL Server 9.6/bin/mysql.exe\" -u root --connect-timeout=5 -e \"SELECT VERSION\\(\\);\")",
+      "Bash(/c/xampp/mysql/bin/mysql.exe -u root --password=\"\" -e \"SELECT VERSION\\(\\); SHOW DATABASES;\")",
+      "Bash(netstat -ano)",
+      "Bash(tasklist /FI \"PID eq 7692\")",
+      "PowerShell(Get-Process | Where-Object {$_.Id -eq 7692})",
+      "PowerShell(\\(Get-Process -Id 7692\\).Path)",
+      "PowerShell(Get-WmiObject Win32_Process -Filter \"ProcessId = 7692\")",
+      "PowerShell(Get-CimInstance -ClassName Win32_Process -Filter \"ProcessId = 7692\")",
+      "Read(//c/xampp/mysql/data/**)",
+      "Read(//c/xampp/mysql/**)",
+      "Bash(/c/xampp/php/php.exe /c/xampp/htdocs/swipre-med/database/seed_passwords.php)",
+      "Bash(/c/xampp/mysql/bin/mysql.exe -u root --password= -h 127.0.0.1 --port=3307 swipre_med -e ' *)"
+    ]
+  }
+}
